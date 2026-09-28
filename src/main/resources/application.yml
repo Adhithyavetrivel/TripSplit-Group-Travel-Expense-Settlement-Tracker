@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/tripsplit}
-    username: root
-    password: Aphrodite@06
+    username: your_mysql_username
+    password: your_mysql_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
