@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Head Fragment -->
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${title} + ' — TripSplit'">TripSplit</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- Sidebar Fragment -->
+<aside th:fragment="sidebar(activePage, trip, allTrips)" class="sidebar" id="appSidebar">
+  <div class="sidebar-header">
+    <div class="logo-icon">✈</div>
+    <div class="logo-text">TripSplit</div>
+  </div>
+
+  <div class="trip-selector-container" th:if="${allTrips != null and not #lists.isEmpty(allTrips)}">
+    <label class="trip-selector-label">Select Trip</label>
+    <select class="trip-select" onchange="if(this.value) window.location.href = '/dashboard?tripId=' + this.value">
+      <option th:each="t : ${allTrips}"
+              th:value="${t.id}"
+              th:text="${t.name} + ' (' + ${t.destination != null ? t.destination : 'Trip'} + ')'"
+              th:selected="${trip != null and trip.id == t.id}">
+        Trip Name
+      </option>
+    </select>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a th:href="${trip != null} ? @{/dashboard(tripId=${trip.id})} : @{/trips/create}"
+       class="nav-item"
+       th:classappend="${activePage == 'dashboard'} ? ' active' : ''">
+      <span class="nav-icon">📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <a th:if="${trip != null}"
+       th:href="@{/trips/{id}/expenses(id=${trip.id})}"
+       class="nav-item"
+       th:classappend="${activePage == 'expenses'} ? ' active' : ''">
+      <span class="nav-icon">💳</span>
+      <span>Expenses</span>
+    </a>
+
+    <a th:if="${trip != null}"
+       th:href="@{/trips/{id}/balances(id=${trip.id})}"
+       class="nav-item"
+       th:classappend="${activePage == 'balances'} ? ' active' : ''">
+      <span class="nav-icon">⚖️</span>
+      <span>Balances</span>
+    </a>
+
+    <a th:if="${trip != null}"
+       th:href="@{/trips/{id}/settlement(id=${trip.id})}"
+       class="nav-item"
+       th:classappend="${activePage == 'settlement'} ? ' active' : ''">
+      <span class="nav-icon">🤝</span>
+      <span>Settlement</span>
+    </a>
+
+    <a th:if="${trip != null}"
+       th:href="@{/trips/{id}/activity(id=${trip.id})}"
+       class="nav-item"
+       th:classappend="${activePage == 'activity'} ? ' active' : ''">
+      <span class="nav-icon">⏱️</span>
+      <span>Activity</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a th:href="@{/trips/create}" class="btn-sidebar-create">
+      <span>+</span>
+      <span>Create New Trip</span>
+    </a>
+  </div>
+</aside>
+
+<!-- Topbar Fragment -->
+<header th:fragment="topbar(trip)" class="topbar">
+  <div class="topbar-left">
+    <button class="mobile-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+    <div class="topbar-trip-info" th:if="${trip != null}">
+      <h2>
+        <span th:text="${trip.name}">Trip Name</span>
+        <span class="destination-tag" th:if="${trip.destination != null}" th:text="${trip.destination}">Destination</span>
+      </h2>
+    </div>
+    <div class="topbar-trip-info" th:if="${trip == null}">
+      <h2>Create New Trip</h2>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="user-selector-box" title="User identity for audit logging">
+      <label for="headerUser">User:</label>
+      <input type="text" id="headerUser" placeholder="Username" value="SYSTEM">
+    </div>
+
+    <button th:if="${trip != null}" type="button" class="btn btn-secondary btn-sm" onclick="openModal('addParticipantModal')">
+      + Participant
+    </button>
+    <button th:if="${trip != null}" type="button" class="btn btn-primary btn-sm" onclick="openAddExpenseModal()">
+      + Expense
+    </button>
+  </div>
+</header>
+
+<!-- Modals Fragment (Add Participant & Add/Edit Expense) -->
+<div th:fragment="modals(trip)">
+  <!-- Add Participant Modal -->
+  <div class="modal-backdrop" id="addParticipantModal" th:if="${trip != null}">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Participant to Trip</h3>
+        <button class="modal-close" onclick="closeModal('addParticipantModal')">✕</button>
+      </div>
+      <form th:onsubmit="'submitAddParticipant(event, ' + ${trip.id} + '); return false;'">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. David Miller" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address (Optional)</label>
+            <input type="email" name="email" class="form-control" placeholder="david@example.com">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addParticipantModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Participant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add / Edit Expense Modal -->
+  <div class="modal-backdrop" id="expenseModal" th:if="${trip != null}">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="expenseModalTitle">Add Expense</h3>
+        <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
+      </div>
+      <form id="expenseForm" th:onsubmit="'submitExpenseForm(event, ' + ${trip.id} + '); return false;'">
+        <input type="hidden" id="expenseIdField" value="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Description *</label>
+            <input type="text" name="description" class="form-control" placeholder="e.g. Seafood Dinner, Resort Booking" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Amount (₹) *</label>
+              <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payer *</label>
+              <select name="payerId" class="form-control" required>
+                <option value="" disabled selected>Select who paid</option>
+                <option th:each="p : ${trip.participants}" th:value="${p.id}" th:text="${p.name}">Alice</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Expense Date</label>
+            <input type="date" name="expenseDate" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Split Type</label>
+            <div style="display: flex; gap: 20px; margin-top: 6px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="splitType" value="equal" id="splitEqualRadio" checked onchange="onSplitTypeChange()">
+                <span>Equal Split</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="splitType" value="custom" id="splitCustomRadio" onchange="onSplitTypeChange()">
+                <span>Custom Split</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Split Among Participants *</label>
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; max-height: 220px; overflow-y: auto;">
+              <div th:each="p : ${trip.participants}" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
+                  <input type="checkbox" class="expense-participant-checkbox" th:value="${p.id}" checked>
+                  <span th:text="${p.name}">Alice</span>
+                </label>
+                <div class="custom-amount-input" style="display: none; width: 140px;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: var(--text-muted); font-size: 13px;">₹</span>
+                    <input type="number" step="0.01" min="0" th:id="'customAmount_' + ${p.id}" class="form-control" style="padding: 4px 8px; font-size: 13px;" placeholder="0.00">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+              For Equal Split, the total amount is evenly divided by the backend across checked participants. For Custom Split, specify exact owed amounts.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+</div>
+
+</body>
+</html>

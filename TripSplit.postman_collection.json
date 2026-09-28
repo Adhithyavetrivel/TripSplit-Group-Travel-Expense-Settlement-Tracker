@@ -1,0 +1,187 @@
+{
+  "info": {
+    "name": "TripSplit API",
+    "description": "Group Travel Expense Settlement Tracker API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "tripId", "value": "1", "type": "string" },
+    { "key": "participantId", "value": "1", "type": "string" },
+    { "key": "expenseId", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Trips",
+      "item": [
+        {
+          "name": "Create Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Goa Trip\",\n  \"description\": \"College friends trip\",\n  \"destination\": \"Goa\",\n  \"startDate\": \"2026-10-10\",\n  \"endDate\": \"2026-10-13\",\n  \"participants\": [\n    { \"name\": \"Alice\", \"email\": \"alice@example.com\" },\n    { \"name\": \"Bob\", \"email\": \"bob@example.com\" },\n    { \"name\": \"Charlie\", \"email\": \"charlie@example.com\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/trips", "host": ["{{baseUrl}}"], "path": ["api", "trips"] }
+          }
+        },
+        {
+          "name": "Get Trip",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}"] }
+          }
+        },
+        {
+          "name": "Add Participant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"David\",\n  \"email\": \"david@example.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/participants", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "participants"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Create Equal Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Dinner\",\n  \"amount\": 2400,\n  \"payerId\": 1,\n  \"expenseDate\": \"2026-10-10\",\n  \"participants\": [\n    { \"participantId\": 1 },\n    { \"participantId\": 2 },\n    { \"participantId\": 3 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/expenses", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "expenses"] }
+          }
+        },
+        {
+          "name": "Create Custom Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Hotel\",\n  \"amount\": 5000,\n  \"payerId\": 1,\n  \"expenseDate\": \"2026-10-11\",\n  \"participants\": [\n    { \"participantId\": 1, \"owedAmount\": 2000 },\n    { \"participantId\": 2, \"owedAmount\": 1500 },\n    { \"participantId\": 3, \"owedAmount\": 1500 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/expenses", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "expenses"] }
+          }
+        },
+        {
+          "name": "Get Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/expenses?page=0&size=10&sort=expenseDate&direction=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "expenses"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "sort", "value": "expenseDate" },
+                { "key": "direction", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Dinner Updated\",\n  \"amount\": 3000,\n  \"payerId\": 1,\n  \"expenseDate\": \"2026-10-10\",\n  \"participants\": [\n    { \"participantId\": 1 },\n    { \"participantId\": 2 },\n    { \"participantId\": 3 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/expenses/{{expenseId}}", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "expenses", "{{expenseId}}"] }
+          }
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/expenses/{{expenseId}}", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "expenses", "{{expenseId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Balances",
+      "item": [
+        {
+          "name": "Get Balances",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/balances", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "balances"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settlements",
+      "item": [
+        {
+          "name": "Generate Settlement",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-User", "value": "Adhithya" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/settlements/generate", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "settlements", "generate"] }
+          }
+        },
+        {
+          "name": "Get Settlement",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/settlement", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "settlement"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit & History",
+      "item": [
+        {
+          "name": "Get History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/history", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "history"] }
+          }
+        },
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/trips/{{tripId}}/audit-logs", "host": ["{{baseUrl}}"], "path": ["api", "trips", "{{tripId}}", "audit-logs"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Balances')}"></head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside th:replace="~{fragments/layout :: sidebar('balances', ${trip}, ${allTrips})}"></aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header th:replace="~{fragments/layout :: topbar(${trip})}"></header>
+
+    <!-- Body -->
+    <main class="content-body">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Participant Balances</h1>
+          <p class="page-subtitle">Accurate breakdown of what each person paid, owes, and net position</p>
+        </div>
+
+        <a th:href="@{/trips/{id}/settlement(id=${trip.id})}" class="btn btn-primary">
+          View Settlement Plan →
+        </a>
+      </div>
+
+      <!-- Zero-sum invariant banner (Phase 10) -->
+      <div class="alert-box alert-success" th:if="${totalNetBalance != null and totalNetBalance.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
+        <span style="font-size: 20px;">✓</span>
+        <div>
+          <strong>Total Balance: ₹0.00 — Balance Verified</strong>
+          <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;">
+            The zero-sum financial invariant holds. The sum of all debts perfectly matches the sum of all credits.
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-box alert-warning" th:if="${totalNetBalance != null and totalNetBalance.compareTo(T(java.math.BigDecimal).ZERO) != 0}">
+        <span style="font-size: 20px;">⚠</span>
+        <div>
+          <strong th:text="'Total Balance: ₹' + ${totalNetBalance} + ' — Invariant Discrepancy'">Discrepancy</strong>
+          <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;">
+            Net balance sum is non-zero. Check expense splits.
+          </div>
+        </div>
+      </div>
+
+      <!-- Balances Table Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Group Member Ledger</h3>
+          <span style="font-size: 13px; color: var(--text-muted);" th:text="${#lists.size(balances)} + ' Participants'">4 Participants</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Participant</th>
+                  <th>Total Paid</th>
+                  <th>Total Owed</th>
+                  <th>Net Balance</th>
+                  <th style="text-align: right;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${balances == null or #lists.isEmpty(balances)}">
+                  <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 36px;">
+                    No balances calculated yet.
+                  </td>
+                </tr>
+
+                <tr th:each="b : ${balances}">
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div class="avatar" th:text="${#strings.substring(b.participantName, 0, 1).toUpperCase()}">A</div>
+                      <span style="font-weight: 700; font-size: 15px;" th:text="${b.participantName}">Alice</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style="font-weight: 600; color: var(--text-secondary);"
+                          th:text="'₹' + ${#numbers.formatDecimal(b.totalPaid, 1, 'COMMA', 2, 'POINT')}">₹5,000.00</span>
+                  </td>
+                  <td>
+                    <span style="font-weight: 600; color: var(--text-secondary);"
+                          th:text="'₹' + ${#numbers.formatDecimal(b.totalOwed, 1, 'COMMA', 2, 'POINT')}">₹3,000.00</span>
+                  </td>
+                  <td>
+                    <span th:if="${b.netBalance > 0}" class="amount-positive" style="font-size: 15px;"
+                          th:text="'+₹' + ${#numbers.formatDecimal(b.netBalance, 1, 'COMMA', 2, 'POINT')}">+₹2,000.00</span>
+                    <span th:if="${b.netBalance < 0}" class="amount-negative" style="font-size: 15px;"
+                          th:text="'-₹' + ${#numbers.formatDecimal(b.netBalance.abs(), 1, 'COMMA', 2, 'POINT')}">-₹2,000.00</span>
+                    <span th:if="${b.netBalance == 0}" class="amount-zero" style="font-size: 15px;">₹0.00</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <span th:if="${b.status == 'RECEIVE'}" class="badge badge-receive">RECEIVE</span>
+                    <span th:if="${b.status == 'PAY'}" class="badge badge-pay">PAY</span>
+                    <span th:if="${b.status == 'SETTLED'}" class="badge badge-settled">SETTLED</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modals -->
+<div th:replace="~{fragments/layout :: modals(${trip})}"></div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

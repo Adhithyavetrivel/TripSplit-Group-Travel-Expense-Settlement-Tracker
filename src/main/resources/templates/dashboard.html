@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside th:replace="~{fragments/layout :: sidebar('dashboard', ${trip}, ${allTrips})}"></aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header th:replace="~{fragments/layout :: topbar(${trip})}"></header>
+
+    <!-- Body -->
+    <main class="content-body">
+      <!-- Trip Banner -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" th:text="${trip.name}">Goa Friends Trip</h1>
+          <p class="page-subtitle">
+            <span th:if="${trip.destination != null}" th:text="${trip.destination}">Goa, India</span>
+            <span th:if="${trip.startDate != null and trip.endDate != null}">
+              • <span th:text="${#temporals.format(trip.startDate, 'dd MMM yyyy')}">10 Oct 2026</span> to <span th:text="${#temporals.format(trip.endDate, 'dd MMM yyyy')}">13 Oct 2026</span>
+            </span>
+            <span th:if="${trip.description != null}" th:text="'— ' + ${trip.description}">College trip</span>
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="openModal('addParticipantModal')">
+            + Add Participant
+          </button>
+          <button type="button" class="btn btn-primary" onclick="openAddExpenseModal()">
+            + Add Expense
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Total Expenses</span>
+            <div class="stat-icon icon-blue">₹</div>
+          </div>
+          <div class="stat-value" th:text="'₹' + ${#numbers.formatDecimal(trip.totalExpenses != null ? trip.totalExpenses : 0, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+          <div class="stat-meta">Across entire trip</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Participants</span>
+            <div class="stat-icon icon-purple">👥</div>
+          </div>
+          <div class="stat-value" th:text="${trip.participants != null ? #lists.size(trip.participants) : 0}">0</div>
+          <div class="stat-meta">Active group members</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Expenses Count</span>
+            <div class="stat-icon icon-amber">🧾</div>
+          </div>
+          <div class="stat-value" th:text="${trip.expenseCount}">0</div>
+          <div class="stat-meta">Recorded transactions</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Settlement Status</span>
+            <div class="stat-icon icon-green">🤝</div>
+          </div>
+          <div class="stat-value" style="font-size: 18px; margin-top: 4px;">
+            <span th:if="${settlement != null and settlement.verified and (settlement.settlements == null or #lists.isEmpty(settlement.settlements))}" class="badge badge-verified">
+              ✓ All Settled
+            </span>
+            <span th:if="${settlement != null and settlement.verified and settlement.settlements != null and not #lists.isEmpty(settlement.settlements)}" class="badge badge-verified">
+              ✓ Verified Plan
+            </span>
+            <span th:if="${settlement == null or not settlement.verified}" class="badge badge-pending">
+              ⚡ Action Needed
+            </span>
+          </div>
+          <div class="stat-meta">
+            <a th:href="@{/trips/{id}/settlement(id=${trip.id})}" style="color: var(--primary); text-decoration: none; font-weight: 600;">
+              View settlement plan →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Two Column Grid: Participants and Balance Summary -->
+      <div class="grid-2">
+        <!-- Participants Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Trip Participants</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('addParticipantModal')">
+              + Add
+            </button>
+          </div>
+          <div class="card-body">
+            <div th:if="${trip.participants == null or #lists.isEmpty(trip.participants)}" style="text-align: center; color: var(--text-muted); padding: 20px;">
+              No participants added yet.
+            </div>
+            <div th:each="p : ${trip.participants}" class="participant-item">
+              <div class="participant-info">
+                <div class="avatar" th:text="${#strings.substring(p.name, 0, 1).toUpperCase()}">A</div>
+                <div>
+                  <div class="participant-name" th:text="${p.name}">Alice</div>
+                  <div class="participant-email" th:text="${p.email != null and p.email != '' ? p.email : 'No email provided'}">alice@example.com</div>
+                </div>
+              </div>
+              <span class="badge badge-settled">Member</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance Summary Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Balance Summary</h3>
+            <a th:href="@{/trips/{id}/balances(id=${trip.id})}" class="btn btn-secondary btn-sm">Full Details</a>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Participant</th>
+                    <th>Net Balance</th>
+                    <th style="text-align: right;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:if="${trip.balances == null or #lists.isEmpty(trip.balances)}">
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                      No balances to display. Add expenses to compute balances.
+                    </td>
+                  </tr>
+                  <tr th:each="b : ${trip.balances}">
+                    <td>
+                      <strong th:text="${b.participantName}">Alice</strong>
+                    </td>
+                    <td>
+                      <span th:if="${b.netBalance > 0}" class="amount-positive" th:text="'+₹' + ${#numbers.formatDecimal(b.netBalance, 1, 'COMMA', 2, 'POINT')}">+₹2,000.00</span>
+                      <span th:if="${b.netBalance < 0}" class="amount-negative" th:text="'-₹' + ${#numbers.formatDecimal(b.netBalance.abs(), 1, 'COMMA', 2, 'POINT')}">-₹1,500.00</span>
+                      <span th:if="${b.netBalance == 0}" class="amount-zero">₹0.00</span>
+                    </td>
+                    <td style="text-align: right;">
+                      <span th:if="${b.status == 'RECEIVE'}" class="badge badge-receive">RECEIVE</span>
+                      <span th:if="${b.status == 'PAY'}" class="badge badge-pay">PAY</span>
+                      <span th:if="${b.status == 'SETTLED'}" class="badge badge-settled">SETTLED</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Settlement Callout Banner -->
+      <div class="card" style="margin-top: 10px; background: linear-gradient(135deg, #1e293b, #0f172a); color: #ffffff; border: none;">
+        <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h4 style="font-size: 16px; font-weight: 700;">Simplify Group Debts</h4>
+            <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;">
+              TripSplit automatically computes optimal peer-to-peer settlement transactions using debt simplification.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <a th:href="@{/trips/{id}/settlement(id=${trip.id})}" class="btn btn-primary">
+              Open Settlement →
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modals -->
+<div th:replace="~{fragments/layout :: modals(${trip})}"></div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

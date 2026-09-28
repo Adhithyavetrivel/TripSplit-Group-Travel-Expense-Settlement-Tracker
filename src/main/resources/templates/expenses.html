@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Expenses')}"></head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside th:replace="~{fragments/layout :: sidebar('expenses', ${trip}, ${allTrips})}"></aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header th:replace="~{fragments/layout :: topbar(${trip})}"></header>
+
+    <!-- Body -->
+    <main class="content-body">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Trip Expenses</h1>
+          <p class="page-subtitle">Track, filter, and manage shared group expenditures</p>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="openAddExpenseModal()">
+          + Add Expense
+        </button>
+      </div>
+
+      <!-- Sorting & Filter Controls (Phase 9) -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Sort by:</label>
+            <select class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;"
+                    onchange="const [s, d] = this.value.split(':'); window.location.href = '?page=0&size=' + [[${size}]] + '&sort=' + s + '&direction=' + d;">
+              <option value="expenseDate:desc" th:selected="${sort == 'expenseDate' and direction == 'desc'}">Expense Date: Newest first</option>
+              <option value="expenseDate:asc" th:selected="${sort == 'expenseDate' and direction == 'asc'}">Expense Date: Oldest first</option>
+              <option value="amount:desc" th:selected="${sort == 'amount' and direction == 'desc'}">Amount: Highest first</option>
+              <option value="amount:asc" th:selected="${sort == 'amount' and direction == 'asc'}">Amount: Lowest first</option>
+              <option value="description:asc" th:selected="${sort == 'description' and direction == 'asc'}">Description: A to Z</option>
+              <option value="description:desc" th:selected="${sort == 'description' and direction == 'desc'}">Description: Z to A</option>
+            </select>
+          </div>
+
+          <div style="font-size: 13px; color: var(--text-muted);">
+            Total Expenses: <strong style="color: var(--text-primary);" th:text="${expensePage.totalElements}">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses Table -->
+      <div class="card">
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Payer</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Participants & Shares</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${expensePage.content == null or #lists.isEmpty(expensePage.content)}">
+                  <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
+                    No expenses recorded yet. Click <strong>+ Add Expense</strong> above to get started!
+                  </td>
+                </tr>
+
+                <tr th:each="e : ${expensePage.content}">
+                  <td>
+                    <strong style="color: var(--text-primary); font-size: 15px;" th:text="${e.description}">Dinner</strong>
+                  </td>
+                  <td>
+                    <span class="badge badge-settled" style="font-weight: 600;" th:text="${e.payerName}">Alice</span>
+                  </td>
+                  <td>
+                    <span style="font-weight: 700; font-size: 15px; color: var(--text-primary);"
+                          th:text="'₹' + ${#numbers.formatDecimal(e.amount, 1, 'COMMA', 2, 'POINT')}">₹2,400.00</span>
+                  </td>
+                  <td>
+                    <span style="color: var(--text-secondary); font-size: 13px;"
+                          th:text="${#temporals.format(e.expenseDate, 'dd MMM yyyy')}">10 Oct 2026</span>
+                  </td>
+                  <td>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px; max-width: 320px;">
+                      <span th:each="ep : ${e.participants}" class="badge badge-settled" style="font-size: 11px;">
+                        <span th:text="${ep.participantName}">Bob</span>:
+                        <span style="font-weight: 700;" th:text="'₹' + ${#numbers.formatDecimal(ep.owedAmount, 1, 'COMMA', 2, 'POINT')}">₹800.00</span>
+                      </span>
+                    </div>
+                  </td>
+                  <td style="text-align: right; white-space: nowrap;">
+                    <!-- Edit Button -->
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            onclick="editExpense(this)"
+                            th:attr="data-expense='{&quot;id&quot;:' + ${e.id} + ',&quot;description&quot;:&quot;' + ${#strings.escapeJavaScript(e.description)} + '&quot;,&quot;amount&quot;:' + ${e.amount} + ',&quot;payerId&quot;:' + ${e.payerId} + ',&quot;expenseDate&quot;:&quot;' + ${e.expenseDate} + '&quot;,&quot;participants&quot;:[' + ${#strings.listJoin(e.participants.![ '{&quot;participantId&quot;:' + participantId + ',&quot;owedAmount&quot;:' + owedAmount + '}' ], ',')} + ']}'">
+                      Edit
+                    </button>
+                    <!-- Delete Button -->
+                    <button type="button"
+                            class="btn btn-danger btn-sm"
+                            th:onclick="'deleteExpense(' + ${trip.id} + ', ' + ${e.id} + ')'"
+                            style="margin-left: 4px;">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination Controls (Phase 8) -->
+        <div class="pagination-container" th:if="${expensePage.totalPages > 1}">
+          <div style="font-size: 13px; color: var(--text-secondary);">
+            Page <strong th:text="${currentPage + 1}">1</strong> of <strong th:text="${expensePage.totalPages}">1</strong>
+            (<span th:text="${expensePage.totalElements}">0</span> total expenses)
+          </div>
+
+          <div class="pagination-controls">
+            <!-- Previous Button -->
+            <a th:if="${currentPage > 0}"
+               th:href="@{/trips/{id}/expenses(id=${trip.id}, page=${currentPage - 1}, size=${size}, sort=${sort}, direction=${direction})}"
+               class="btn btn-secondary btn-sm">
+              ← Previous
+            </a>
+            <span th:if="${currentPage <= 0}" class="btn btn-secondary btn-sm" style="opacity: 0.5; pointer-events: none;">
+              ← Previous
+            </span>
+
+            <!-- Next Button -->
+            <a th:if="${currentPage + 1 < expensePage.totalPages}"
+               th:href="@{/trips/{id}/expenses(id=${trip.id}, page=${currentPage + 1}, size=${size}, sort=${sort}, direction=${direction})}"
+               class="btn btn-secondary btn-sm">
+              Next →
+            </a>
+            <span th:if="${currentPage + 1 >= expensePage.totalPages}" class="btn btn-secondary btn-sm" style="opacity: 0.5; pointer-events: none;">
+              Next →
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modals -->
+<div th:replace="~{fragments/layout :: modals(${trip})}"></div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

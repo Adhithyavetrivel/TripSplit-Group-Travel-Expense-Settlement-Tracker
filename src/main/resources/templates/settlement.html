@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Settlement')}"></head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside th:replace="~{fragments/layout :: sidebar('settlement', ${trip}, ${allTrips})}"></aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header th:replace="~{fragments/layout :: topbar(${trip})}"></header>
+
+    <!-- Body -->
+    <main class="content-body" style="max-width: 880px;">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Trip Settlement</h1>
+          <p class="page-subtitle">Optimal peer-to-peer debt resolution minimizing total transactions</p>
+        </div>
+
+        <button type="button" id="generateSettlementBtn" class="btn btn-primary"
+                th:onclick="'triggerGenerateSettlement(' + ${trip.id} + ')'">
+          ⚡ Generate Settlement
+        </button>
+      </div>
+
+      <!-- Settlement Status Banner -->
+      <div th:if="${settlement != null and settlement.verified and (settlement.settlements == null or #lists.isEmpty(settlement.settlements))}"
+           class="alert-box alert-success">
+        <span style="font-size: 22px;">✓</span>
+        <div>
+          <strong style="font-size: 15px;">All participants are already settled.</strong>
+          <div style="font-size: 13px; opacity: 0.9; margin-top: 2px;">
+            Every participant's net balance is ₹0.00. No money needs to be transferred!
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${settlement != null and settlement.verified and settlement.settlements != null and not #lists.isEmpty(settlement.settlements)}"
+           class="alert-box alert-success">
+        <span style="font-size: 22px;">✓</span>
+        <div>
+          <strong style="font-size: 15px;">Settlement Verified</strong>
+          <div style="font-size: 13px; opacity: 0.9; margin-top: 2px;">
+            The settlement plan is verified and clears all outstanding debts across participants.
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${settlement == null or not settlement.verified}"
+           class="alert-box alert-warning">
+        <span style="font-size: 22px;">⚠</span>
+        <div>
+          <strong style="font-size: 15px;">Settlement Not Verified / Outdated</strong>
+          <div style="font-size: 13px; opacity: 0.9; margin-top: 2px;">
+            Balances have changed or settlement has not been generated yet. Click <strong>Generate Settlement</strong> to compute the optimal settlement plan.
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Settlement Transactions</h3>
+          <span class="badge badge-settled"
+                th:text="${settlement != null and settlement.settlements != null ? #lists.size(settlement.settlements) : 0} + ' Transactions'">
+            0 Transactions
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div th:if="${settlement == null or settlement.settlements == null or #lists.isEmpty(settlement.settlements)}"
+               style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+            <div style="font-size: 36px; margin-bottom: 8px;">🤝</div>
+            <p style="font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">No Pending Transfers</p>
+            <p style="font-size: 13px;">Either all members are even, or you need to generate a new settlement plan above.</p>
+          </div>
+
+          <!-- Transaction List -->
+          <div th:if="${settlement != null and settlement.settlements != null and not #lists.isEmpty(settlement.settlements)}">
+            <div th:each="s : ${settlement.settlements}" class="settlement-card">
+              <!-- Payer (Debtor) -->
+              <div class="settlement-party">
+                <div class="avatar" style="background: linear-gradient(135deg, #ef4444, #dc2626);"
+                     th:text="${#strings.substring(s.fromParticipantName, 0, 1).toUpperCase()}">B</div>
+                <div>
+                  <div style="font-size: 11px; text-transform: uppercase; color: var(--danger-dark); font-weight: 700; letter-spacing: 0.05em;">PAYS</div>
+                  <strong style="font-size: 16px; color: var(--text-primary);" th:text="${s.fromParticipantName}">Bob</strong>
+                </div>
+              </div>
+
+              <!-- Direction & Amount -->
+              <div class="settlement-arrow">
+                <span class="settlement-amount-pill"
+                      th:text="'₹' + ${#numbers.formatDecimal(s.amount, 1, 'COMMA', 2, 'POINT')}">₹1,500.00</span>
+                <span style="font-size: 18px; color: var(--primary);">──────►</span>
+              </div>
+
+              <!-- Receiver (Creditor) -->
+              <div class="settlement-party" style="text-align: right; flex-direction: row-reverse;">
+                <div class="avatar" style="background: linear-gradient(135deg, #10b981, #059669);"
+                     th:text="${#strings.substring(s.toParticipantName, 0, 1).toUpperCase()}">A</div>
+                <div>
+                  <div style="font-size: 11px; text-transform: uppercase; color: var(--success-dark); font-weight: 700; letter-spacing: 0.05em;">RECEIVES</div>
+                  <strong style="font-size: 16px; color: var(--text-primary);" th:text="${s.toParticipantName}">Alice</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modals -->
+<div th:replace="~{fragments/layout :: modals(${trip})}"></div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
